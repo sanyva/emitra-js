@@ -7,7 +7,11 @@
 
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         :root {
             --bg: #0f1117;
@@ -43,8 +47,15 @@
             gap: 16px;
         }
 
-        header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: .5px; }
-        header h1 span { color: var(--accent); }
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+
+        header h1 span {
+            color: var(--accent);
+        }
 
         #status-badge {
             margin-left: auto;
@@ -56,15 +67,33 @@
         }
 
         #status-dot {
-            width: 10px; height: 10px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: var(--red);
             box-shadow: 0 0 6px var(--red);
             transition: background .3s, box-shadow .3s;
         }
-        #status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
-        #status-dot.connecting { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: pulse 1s infinite; }
-        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+
+        #status-dot.connected {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        #status-dot.connecting {
+            background: var(--yellow);
+            box-shadow: 0 0 8px var(--yellow);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1
+            }
+            50% {
+                opacity: .4
+            }
+        }
 
         /* ── LAYOUT ── */
         .workspace {
@@ -98,8 +127,17 @@
             margin-bottom: 14px;
         }
 
-        label { display: block; font-size: .8rem; color: var(--text-dim); margin-bottom: 5px; margin-top: 10px; }
-        label:first-of-type { margin-top: 0; }
+        label {
+            display: block;
+            font-size: .8rem;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+            margin-top: 10px;
+        }
+
+        label:first-of-type {
+            margin-top: 0;
+        }
 
         input, textarea, select {
             width: 100%;
@@ -113,9 +151,15 @@
             outline: none;
             transition: border-color .2s;
         }
-        input:focus, textarea:focus { border-color: var(--accent); }
 
-        textarea { resize: vertical; min-height: 80px; }
+        input:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
 
         .btn {
             display: inline-flex;
@@ -130,20 +174,67 @@
             cursor: pointer;
             transition: background .2s, opacity .2s;
         }
-        .btn:active { opacity: .8; }
-        .btn-primary  { background: var(--accent); color: #fff; }
-        .btn-primary:hover  { background: var(--accent-hover); }
-        .btn-success  { background: var(--green); color: #fff; }
-        .btn-success:hover  { background: #16a34a; }
-        .btn-danger   { background: var(--red); color: #fff; }
-        .btn-danger:hover   { background: #dc2626; }
-        .btn-ghost    { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-        .btn-ghost:hover    { background: var(--border); }
-        .btn:disabled { opacity: .4; cursor: not-allowed; }
-        .btn-full { width: 100%; margin-top: 12px; }
 
-        .row { display: flex; gap: 8px; margin-top: 12px; }
-        .row .btn { flex: 1; }
+        .btn:active {
+            opacity: .8;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-success {
+            background: var(--green);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .btn-danger {
+            background: var(--red);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-ghost {
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--border);
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .btn-full {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .row .btn {
+            flex: 1;
+        }
 
         /* Channel chips */
         #channel-list {
@@ -165,7 +256,12 @@
             font-size: .78rem;
             cursor: default;
         }
-        .chip.active { border-color: var(--accent); color: var(--accent); }
+
+        .chip.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
         .chip-remove {
             background: none;
             border: none;
@@ -175,7 +271,10 @@
             line-height: 1;
             padding: 0;
         }
-        .chip-remove:hover { color: var(--red); }
+
+        .chip-remove:hover {
+            color: var(--red);
+        }
 
         /* ── MAIN ── */
         .main {
@@ -205,14 +304,42 @@
             font-size: .82rem;
             animation: fadeIn .2s ease;
         }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:none } }
 
-        .log-entry.incoming { border-color: var(--green); }
-        .log-entry.outgoing { border-color: var(--accent); }
-        .log-entry.system   { border-color: var(--yellow); background: #1f1c0f; }
-        .log-entry.error    { border-color: var(--red);    background: #1f0f0f; }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px)
+            }
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
 
-        .log-time  { color: var(--text-dim); font-family: monospace; font-size: .75rem; }
+        .log-entry.incoming {
+            border-color: var(--green);
+        }
+
+        .log-entry.outgoing {
+            border-color: var(--accent);
+        }
+
+        .log-entry.system {
+            border-color: var(--yellow);
+            background: #1f1c0f;
+        }
+
+        .log-entry.error {
+            border-color: var(--red);
+            background: #1f0f0f;
+        }
+
+        .log-time {
+            color: var(--text-dim);
+            font-family: monospace;
+            font-size: .75rem;
+        }
+
         .log-badge {
             display: inline-block;
             padding: 2px 8px;
@@ -222,13 +349,37 @@
             text-transform: uppercase;
             text-align: center;
         }
-        .incoming .log-badge { background: #15422a; color: var(--green); }
-        .outgoing .log-badge { background: #1e1a40; color: var(--accent); }
-        .system   .log-badge { background: #2d220a; color: var(--yellow); }
-        .error    .log-badge { background: #2d0f0f; color: var(--red); }
 
-        .log-body { font-family: 'Consolas', monospace; word-break: break-all; color: var(--text); }
-        .log-meta { color: var(--text-dim); font-size: .75rem; }
+        .incoming .log-badge {
+            background: #15422a;
+            color: var(--green);
+        }
+
+        .outgoing .log-badge {
+            background: #1e1a40;
+            color: var(--accent);
+        }
+
+        .system .log-badge {
+            background: #2d220a;
+            color: var(--yellow);
+        }
+
+        .error .log-badge {
+            background: #2d0f0f;
+            color: var(--red);
+        }
+
+        .log-body {
+            font-family: 'Consolas', monospace;
+            word-break: break-all;
+            color: var(--text);
+        }
+
+        .log-meta {
+            color: var(--text-dim);
+            font-size: .75rem;
+        }
 
         /* Log toolbar */
         .log-toolbar {
@@ -250,7 +401,10 @@
             font-size: .8rem;
             outline: none;
         }
-        #log-search:focus { border-color: var(--accent); }
+
+        #log-search:focus {
+            border-color: var(--accent);
+        }
 
         .log-counter {
             font-size: .75rem;
@@ -259,9 +413,19 @@
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
 
         /* Empty state */
         .empty-log {
@@ -271,7 +435,11 @@
             font-size: .9rem;
             user-select: none;
         }
-        .empty-log .icon { font-size: 3rem; margin-bottom: 12px; }
+
+        .empty-log .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
 
         /* Info banner */
         .info-banner {
@@ -287,8 +455,15 @@
             color: #93a3d4;
             margin-bottom: 12px;
         }
-        .info-banner .info-icon { flex-shrink: 0; font-size: 1rem; }
-        .info-banner strong { color: #b8c7f0; }
+
+        .info-banner .info-icon {
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+
+        .info-banner strong {
+            color: #b8c7f0;
+        }
     </style>
 </head>
 <body>
@@ -312,14 +487,14 @@
             <div class="panel-title">🔌 Connection</div>
 
             <label>App Key</label>
-            <input id="app-key" type="text"   placeholder="your-app-key">
+            <input id="app-key" type="text" placeholder="your-app-key">
 
             <label>Server (host)</label>
             <input id="server-url" type="text" value="wss://wss.evnt-flow.com" placeholder="wss://...">
 
             <div class="row">
                 <button class="btn btn-success" id="btn-connect">Connect</button>
-                <button class="btn btn-danger"  id="btn-disconnect" disabled>Disconnect</button>
+                <button class="btn btn-danger" id="btn-disconnect" disabled>Disconnect</button>
             </div>
         </div>
 
@@ -408,25 +583,25 @@
 
     // ── DOM refs ───────────────────────────────────────────────────────────
     const $ = id => document.getElementById(id)
-    const btnConnect    = $('btn-connect')
+    const btnConnect = $('btn-connect')
     const btnDisconnect = $('btn-disconnect')
-    const btnSubscribe  = $('btn-subscribe')
-    const btnSend       = $('btn-send')
-    const btnListen     = $('btn-listen')
-    const statusDot     = $('status-dot')
-    const statusText    = $('status-text')
-    const channelList   = $('channel-list')
-    const sendChannelSel    = $('send-channel')
-    const listenChannelSel  = $('listen-channel')
-    const logEl         = $('log')
-    const emptyLog      = $('empty-log')
-    const logSearch     = $('log-search')
-    const logCounterEl  = $('log-counter')
+    const btnSubscribe = $('btn-subscribe')
+    const btnSend = $('btn-send')
+    const btnListen = $('btn-listen')
+    const statusDot = $('status-dot')
+    const statusText = $('status-text')
+    const channelList = $('channel-list')
+    const sendChannelSel = $('send-channel')
+    const listenChannelSel = $('listen-channel')
+    const logEl = $('log')
+    const emptyLog = $('empty-log')
+    const logSearch = $('log-search')
+    const logCounterEl = $('log-counter')
 
     // ── Logging ────────────────────────────────────────────────────────────
     function addLog(type, badge, body, meta = '') {
         logCounter++
-        const entry = { id: logCounter, type, badge, body, meta, time: new Date() }
+        const entry = {id: logCounter, type, badge, body, meta, time: new Date()}
         allLogEntries.push(entry)
         renderLog()
     }
@@ -466,11 +641,12 @@
     }
 
     function formatTime(d) {
-        return d.toTimeString().slice(0,8)
+        return d.toTimeString().slice(0, 8)
     }
+
     function escHtml(s) {
         return String(s)
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     }
 
     $('btn-clear-log').onclick = () => {
@@ -489,14 +665,17 @@
         appKey = $('app-key').value.trim()
         const host = $('server-url').value.trim() || 'wss://wss.evnt-flow.com'
 
-        if (!appKey) { alert('Enter App Key'); return }
+        if (!appKey) {
+            alert('Enter App Key');
+            return
+        }
 
         setStatus('connecting')
         addLog('system', 'SYSTEM', `Connecting to ${host}…`)
 
         socket = io(host, {
             path: '/socket.io',
-            query: { appKey },
+            query: {appKey},
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,
@@ -513,7 +692,7 @@
 
             // resubscribe
             subscribedChannels.forEach(ch => {
-                socket.emit('subscribe', { appKey, channel: ch })
+                socket.emit('subscribe', {appKey, channel: ch})
             })
         })
 
@@ -573,11 +752,17 @@
     // ── Channels ───────────────────────────────────────────────────────────
     btnSubscribe.onclick = () => {
         const name = $('channel-name').value.trim()
-        if (!name) { alert('Enter channel name'); return }
-        if (subscribedChannels.has(name)) { alert('Already subscribed'); return }
+        if (!name) {
+            alert('Enter channel name');
+            return
+        }
+        if (subscribedChannels.has(name)) {
+            alert('Already subscribed');
+            return
+        }
 
         subscribedChannels.add(name)
-        socket.emit('subscribe', { appKey, channel: name })
+        socket.emit('subscribe', {appKey, channel: name})
         addLog('system', 'SUBSCRIBE', `Subscribed to channel: ${name}`)
         renderChannelList()
         syncSelects()
@@ -618,31 +803,40 @@
         ;[sendChannelSel, listenChannelSel].forEach(sel => {
             const prev = sel.value
             sel.innerHTML = '<option value="">— select channel —</option>' +
-                channels.map(ch => `<option value="${escHtml(ch)}"${ch===prev?' selected':''}>${escHtml(ch)}</option>`).join('')
+                channels.map(ch => `<option value="${escHtml(ch)}"${ch === prev ? ' selected' : ''}>${escHtml(ch)}</option>`).join('')
         })
     }
 
     function updateSendListenButtons() {
         const hasCh = subscribedChannels.size > 0 && socket && socket.connected
-        btnSend.disabled   = !hasCh
+        btnSend.disabled = !hasCh
         btnListen.disabled = !hasCh
     }
 
     // ── Send ───────────────────────────────────────────────────────────────
     btnSend.onclick = () => {
         const channel = sendChannelSel.value
-        const event   = $('send-event').value.trim()
-        const raw     = $('send-data').value.trim()
+        const event = $('send-event').value.trim()
+        const raw = $('send-data').value.trim()
 
-        if (!channel) { alert('Select a channel'); return }
-        if (!event)   { alert('Enter event name'); return }
-
-        let message
-        try { message = JSON.parse(raw) } catch {
-            alert('Invalid JSON in "Data" field'); return
+        if (!channel) {
+            alert('Select a channel');
+            return
+        }
+        if (!event) {
+            alert('Enter event name');
+            return
         }
 
-        socket.emit('message', { appKey, channel, event, message })
+        let message
+        try {
+            message = JSON.parse(raw)
+        } catch {
+            alert('Invalid JSON in "Data" field');
+            return
+        }
+
+        socket.emit('message', {appKey, channel, event, message})
         addLog('outgoing', 'SEND',
             JSON.stringify(message, null, 2),
             `channel: ${channel}  •  event: ${event}`)
@@ -652,10 +846,16 @@
     // ── Listen ─────────────────────────────────────────────────────────────
     btnListen.onclick = () => {
         const channel = listenChannelSel.value
-        const event   = $('listen-event').value.trim()
+        const event = $('listen-event').value.trim()
 
-        if (!channel) { alert('Select a channel'); return }
-        if (!event)   { alert('Enter event name'); return }
+        if (!channel) {
+            alert('Select a channel');
+            return
+        }
+        if (!event) {
+            alert('Enter event name');
+            return
+        }
 
         const key = `${channel}::${event}`
         if (listeners.has(key)) {
@@ -672,6 +872,7 @@
     // Sync listen button state on select change
     listenChannelSel.addEventListener('change', syncListenBtn)
     $('listen-event').addEventListener('input', syncListenBtn)
+
     function syncListenBtn() {
         const key = `${listenChannelSel.value}::${$('listen-event').value.trim()}`
         btnListen.textContent = listeners.has(key) ? 'Stop' : 'Start listening'
