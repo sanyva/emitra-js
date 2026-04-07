@@ -272,6 +272,23 @@
             user-select: none;
         }
         .empty-log .icon { font-size: 3rem; margin-bottom: 12px; }
+
+        /* Info banner */
+        .info-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: #1a1f3d;
+            border: 1px solid #2e3a6e;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: .78rem;
+            line-height: 1.45;
+            color: #93a3d4;
+            margin-bottom: 12px;
+        }
+        .info-banner .info-icon { flex-shrink: 0; font-size: 1rem; }
+        .info-banner strong { color: #b8c7f0; }
     </style>
 </head>
 <body>
@@ -295,7 +312,7 @@
             <div class="panel-title">🔌 Connection</div>
 
             <label>App Key</label>
-            <input id="app-key" type="text" value="your-app-key" placeholder="your-app-key">
+            <input id="app-key" type="text"   placeholder="your-app-key">
 
             <label>Server (host)</label>
             <input id="server-url" type="text" value="wss://wss.evnt-flow.com" placeholder="wss://...">
@@ -342,6 +359,11 @@
         <!-- Listen for event -->
         <div class="panel">
             <div class="panel-title">👂 Listen for Event</div>
+
+            <div class="info-banner">
+                <span class="info-icon">ℹ️</span>
+                <span>The sender <strong>does not</strong> receive their own messages. To test listening, open a <strong>second browser tab</strong> with the same App Key and channel.</span>
+            </div>
 
             <label>Channel</label>
             <select id="listen-channel">
@@ -484,6 +506,7 @@
         socket.on('connect', () => {
             setStatus('connected')
             addLog('system', 'CONNECT', `Connected ✓  socket.id: ${socket.id}`)
+            addLog('system', 'TIP', '💡 To test receiving messages, open this page in a second tab with the same App Key and channel.')
             btnConnect.disabled = true
             btnDisconnect.disabled = false
             btnSubscribe.disabled = false
@@ -623,6 +646,7 @@
         addLog('outgoing', 'SEND',
             JSON.stringify(message, null, 2),
             `channel: ${channel}  •  event: ${event}`)
+        addLog('system', 'NOTE', 'You will not receive your own message — open a second tab to see it delivered.')
     }
 
     // ── Listen ─────────────────────────────────────────────────────────────
