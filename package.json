@@ -26,6 +26,13 @@
   ],
   "author": "sanyva@gmail.com",
   "license": "MIT",
+  "description": "Free lightweight real-time WebSocket client for event-driven apps",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sanyva/emitra-js"
+  },
+  "homepage": "https://evnt-flow.com",
+  "bugs": "https://github.com/sanyva/emitra-js/issues",
   "dependencies": {
     "socket.io-client": "^4.8.3"
   },
