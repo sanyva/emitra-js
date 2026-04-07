@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventFlow — Test Client</title>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #22263a;
+            --border: #2e3350;
+            --accent: #6c63ff;
+            --accent-hover: #8078ff;
+            --green: #22c55e;
+            --red: #ef4444;
+            --yellow: #f59e0b;
+            --text: #e2e8f0;
+            --text-dim: #8892a4;
+            --radius: 10px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: .5px; }
+        header h1 span { color: var(--accent); }
+
+        #status-badge {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .8rem;
+            color: var(--text-dim);
+        }
+
+        #status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--red);
+            box-shadow: 0 0 6px var(--red);
+            transition: background .3s, box-shadow .3s;
+        }
+        #status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        #status-dot.connecting { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+
+        /* ── LAYOUT ── */
+        .workspace {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: calc(100vh - 53px);
+            overflow: hidden;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            overflow-y: auto;
+        }
+
+        .panel {
+            border-bottom: 1px solid var(--border);
+            padding: 18px 18px 20px;
+        }
+
+        .panel-title {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 14px;
+        }
+
+        label { display: block; font-size: .8rem; color: var(--text-dim); margin-bottom: 5px; margin-top: 10px; }
+        label:first-of-type { margin-top: 0; }
+
+        input, textarea, select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 8px 10px;
+            font-size: .85rem;
+            font-family: 'Consolas', monospace;
+            outline: none;
+            transition: border-color .2s;
+        }
+        input:focus, textarea:focus { border-color: var(--accent); }
+
+        textarea { resize: vertical; min-height: 80px; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s, opacity .2s;
+        }
+        .btn:active { opacity: .8; }
+        .btn-primary  { background: var(--accent); color: #fff; }
+        .btn-primary:hover  { background: var(--accent-hover); }
+        .btn-success  { background: var(--green); color: #fff; }
+        .btn-success:hover  { background: #16a34a; }
+        .btn-danger   { background: var(--red); color: #fff; }
+        .btn-danger:hover   { background: #dc2626; }
+        .btn-ghost    { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost:hover    { background: var(--border); }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
+        .btn-full { width: 100%; margin-top: 12px; }
+
+        .row { display: flex; gap: 8px; margin-top: 12px; }
+        .row .btn { flex: 1; }
+
+        /* Channel chips */
+        #channel-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+            min-height: 24px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 10px 4px 12px;
+            font-size: .78rem;
+            cursor: default;
+        }
+        .chip.active { border-color: var(--accent); color: var(--accent); }
+        .chip-remove {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0;
+        }
+        .chip-remove:hover { color: var(--red); }
+
+        /* ── MAIN ── */
+        .main {
+            display: grid;
+            grid-template-rows: 1fr auto;
+            overflow: hidden;
+        }
+
+        /* Log */
+        #log {
+            overflow-y: auto;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .log-entry {
+            display: grid;
+            grid-template-columns: 64px 90px 1fr;
+            gap: 10px;
+            align-items: baseline;
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            background: var(--surface);
+            border-left: 3px solid transparent;
+            font-size: .82rem;
+            animation: fadeIn .2s ease;
+        }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:none } }
+
+        .log-entry.incoming { border-color: var(--green); }
+        .log-entry.outgoing { border-color: var(--accent); }
+        .log-entry.system   { border-color: var(--yellow); background: #1f1c0f; }
+        .log-entry.error    { border-color: var(--red);    background: #1f0f0f; }
+
+        .log-time  { color: var(--text-dim); font-family: monospace; font-size: .75rem; }
+        .log-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+        }
+        .incoming .log-badge { background: #15422a; color: var(--green); }
+        .outgoing .log-badge { background: #1e1a40; color: var(--accent); }
+        .system   .log-badge { background: #2d220a; color: var(--yellow); }
+        .error    .log-badge { background: #2d0f0f; color: var(--red); }
+
+        .log-body { font-family: 'Consolas', monospace; word-break: break-all; color: var(--text); }
+        .log-meta { color: var(--text-dim); font-size: .75rem; }
+
+        /* Log toolbar */
+        .log-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+        }
+
+        #log-search {
+            flex: 1;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 6px 10px;
+            font-size: .8rem;
+            outline: none;
+        }
+        #log-search:focus { border-color: var(--accent); }
+
+        .log-counter {
+            font-size: .75rem;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Empty state */
+        .empty-log {
+            margin: auto;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: .9rem;
+            user-select: none;
+        }
+        .empty-log .icon { font-size: 3rem; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-size:1.4rem">⚡</div>
+    <h1>Event<span>Flow</span> Test Client</h1>
+    <div id="status-badge">
+        <div id="status-dot"></div>
+        <span id="status-text">Not connected</span>
+    </div>
+</header>
+
+<div class="workspace">
+
+    <!-- ── SIDEBAR ── -->
+    <div class="sidebar">
+
+        <!-- Connection -->
+        <div class="panel">
+            <div class="panel-title">🔌 Connection</div>
+
+            <label>App Key</label>
+            <input id="app-key" type="text" value="your-app-key" placeholder="your-app-key">
+
+            <label>Server (host)</label>
+            <input id="server-url" type="text" value="wss://wss.evnt-flow.com" placeholder="wss://...">
+
+            <div class="row">
+                <button class="btn btn-success" id="btn-connect">Connect</button>
+                <button class="btn btn-danger"  id="btn-disconnect" disabled>Disconnect</button>
+            </div>
+        </div>
+
+        <!-- Subscribe -->
+        <div class="panel">
+            <div class="panel-title">📡 Channels</div>
+
+            <label>Channel name</label>
+            <div style="display:flex;gap:8px">
+                <input id="channel-name" type="text" placeholder="test-channel" style="flex:1">
+                <button class="btn btn-primary" id="btn-subscribe" disabled style="margin-top:0;width:auto">+</button>
+            </div>
+
+            <div id="channel-list">
+                <span style="font-size:.75rem;color:var(--text-dim)">No active channels</span>
+            </div>
+        </div>
+
+        <!-- Send event -->
+        <div class="panel">
+            <div class="panel-title">📤 Send Event</div>
+
+            <label>Channel</label>
+            <select id="send-channel">
+                <option value="">— select channel —</option>
+            </select>
+
+            <label>Event</label>
+            <input id="send-event" type="text" placeholder="hello" value="hello">
+
+            <label>Data (JSON)</label>
+            <textarea id="send-data">{ "text": "test message" }</textarea>
+
+            <button class="btn btn-primary btn-full" id="btn-send" disabled>Send</button>
+        </div>
+
+        <!-- Listen for event -->
+        <div class="panel">
+            <div class="panel-title">👂 Listen for Event</div>
+
+            <label>Channel</label>
+            <select id="listen-channel">
+                <option value="">— select channel —</option>
+            </select>
+
+            <label>Event</label>
+            <input id="listen-event" type="text" placeholder="hello" value="hello">
+
+            <button class="btn btn-ghost btn-full" id="btn-listen" disabled>Start listening</button>
+        </div>
+
+    </div>
+
+    <!-- ── MAIN (LOG) ── -->
+    <div class="main">
+        <div id="log">
+            <div class="empty-log" id="empty-log">
+                <div class="icon">🛰️</div>
+                Connect to the server to get started
+            </div>
+        </div>
+
+        <div class="log-toolbar">
+            <input id="log-search" type="text" placeholder="🔍  Search log...">
+            <span class="log-counter" id="log-counter">0 messages</span>
+            <button class="btn btn-ghost" id="btn-clear-log" style="padding:6px 12px;font-size:.8rem">Clear</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ── State ──────────────────────────────────────────────────────────────
+    let socket = null
+    let appKey = ''
+    let subscribedChannels = new Set()      // channel name → true
+    let listeners = new Map()               // "channel::event" → true
+
+    let allLogEntries = []
+    let logCounter = 0
+
+    // ── DOM refs ───────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id)
+    const btnConnect    = $('btn-connect')
+    const btnDisconnect = $('btn-disconnect')
+    const btnSubscribe  = $('btn-subscribe')
+    const btnSend       = $('btn-send')
+    const btnListen     = $('btn-listen')
+    const statusDot     = $('status-dot')
+    const statusText    = $('status-text')
+    const channelList   = $('channel-list')
+    const sendChannelSel    = $('send-channel')
+    const listenChannelSel  = $('listen-channel')
+    const logEl         = $('log')
+    const emptyLog      = $('empty-log')
+    const logSearch     = $('log-search')
+    const logCounterEl  = $('log-counter')
+
+    // ── Logging ────────────────────────────────────────────────────────────
+    function addLog(type, badge, body, meta = '') {
+        logCounter++
+        const entry = { id: logCounter, type, badge, body, meta, time: new Date() }
+        allLogEntries.push(entry)
+        renderLog()
+    }
+
+    function renderLog() {
+        const q = logSearch.value.toLowerCase()
+        const filtered = q
+            ? allLogEntries.filter(e =>
+                e.body.toLowerCase().includes(q) ||
+                e.badge.toLowerCase().includes(q) ||
+                e.meta.toLowerCase().includes(q))
+            : allLogEntries
+
+        logCounterEl.textContent = `${allLogEntries.length} messages`
+
+        if (filtered.length === 0) {
+            if (allLogEntries.length === 0) {
+                emptyLog.style.display = 'block'
+                logEl.innerHTML = ''
+                logEl.appendChild(emptyLog)
+            } else {
+                logEl.innerHTML = `<div class="empty-log"><div class="icon">🔍</div>Nothing found</div>`
+            }
+            return
+        }
+
+        emptyLog.style.display = 'none'
+        logEl.innerHTML = filtered.map(e => `
+            <div class="log-entry ${e.type}">
+                <span class="log-time">${formatTime(e.time)}</span>
+                <span class="log-badge">${e.badge}</span>
+                <span class="log-body">${escHtml(e.body)}${e.meta ? `<br><span class="log-meta">${escHtml(e.meta)}</span>` : ''}</span>
+            </div>`).join('')
+
+        // auto-scroll to bottom
+        logEl.scrollTop = logEl.scrollHeight
+    }
+
+    function formatTime(d) {
+        return d.toTimeString().slice(0,8)
+    }
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    }
+
+    $('btn-clear-log').onclick = () => {
+        allLogEntries = []
+        logCounter = 0
+        logEl.innerHTML = ''
+        logEl.appendChild(emptyLog)
+        emptyLog.style.display = 'block'
+        logCounterEl.textContent = '0 messages'
+    }
+
+    logSearch.addEventListener('input', renderLog)
+
+    // ── Connection ─────────────────────────────────────────────────────────
+    btnConnect.onclick = () => {
+        appKey = $('app-key').value.trim()
+        const host = $('server-url').value.trim() || 'wss://wss.evnt-flow.com'
+
+        if (!appKey) { alert('Enter App Key'); return }
+
+        setStatus('connecting')
+        addLog('system', 'SYSTEM', `Connecting to ${host}…`)
+
+        socket = io(host, {
+            path: '/socket.io',
+            query: { appKey },
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
+        })
+
+        socket.on('connect', () => {
+            setStatus('connected')
+            addLog('system', 'CONNECT', `Connected ✓  socket.id: ${socket.id}`)
+            btnConnect.disabled = true
+            btnDisconnect.disabled = false
+            btnSubscribe.disabled = false
+
+            // resubscribe
+            subscribedChannels.forEach(ch => {
+                socket.emit('subscribe', { appKey, channel: ch })
+            })
+        })
+
+        socket.on('disconnect', reason => {
+            setStatus('disconnected')
+            addLog('error', 'DISCONNECT', `Disconnected: ${reason}`)
+            btnConnect.disabled = false
+            btnDisconnect.disabled = true
+            btnSubscribe.disabled = true
+            updateSendListenButtons()
+        })
+
+        socket.on('connect_error', err => {
+            setStatus('disconnected')
+            addLog('error', 'ERROR', `Connection error: ${err.message}`)
+        })
+
+        // Global message dispatcher
+        socket.on('message', data => {
+            if (!data || !data.channel || !data.event) return
+            const key = `${data.channel}::${data.event}`
+            if (listeners.has(key)) {
+                addLog('incoming', 'RECEIVE',
+                    JSON.stringify(data.message, null, 2),
+                    `channel: ${data.channel}  •  event: ${data.event}`)
+            } else {
+                addLog('incoming', 'MESSAGE',
+                    JSON.stringify(data.message, null, 2),
+                    `channel: ${data.channel}  •  event: ${data.event}`)
+            }
+        })
+
+        socket.on('subscription-error', err => {
+            addLog('error', 'SUB ERR', JSON.stringify(err))
+        })
+        socket.on('message-error', err => {
+            addLog('error', 'MSG ERR', JSON.stringify(err))
+        })
+    }
+
+    btnDisconnect.onclick = () => {
+        if (socket) socket.disconnect()
+        subscribedChannels.clear()
+        listeners.clear()
+        renderChannelList()
+        syncSelects()
+        updateSendListenButtons()
+    }
+
+    function setStatus(state) {
+        statusDot.className = state === 'connected' ? 'connected'
+            : state === 'connecting' ? 'connecting' : ''
+        statusText.textContent = state === 'connected' ? 'Connected'
+            : state === 'connecting' ? 'Connecting…' : 'Not connected'
+    }
+
+    // ── Channels ───────────────────────────────────────────────────────────
+    btnSubscribe.onclick = () => {
+        const name = $('channel-name').value.trim()
+        if (!name) { alert('Enter channel name'); return }
+        if (subscribedChannels.has(name)) { alert('Already subscribed'); return }
+
+        subscribedChannels.add(name)
+        socket.emit('subscribe', { appKey, channel: name })
+        addLog('system', 'SUBSCRIBE', `Subscribed to channel: ${name}`)
+        renderChannelList()
+        syncSelects()
+        updateSendListenButtons()
+        $('channel-name').value = ''
+    }
+
+    $('channel-name').addEventListener('keydown', e => {
+        if (e.key === 'Enter') btnSubscribe.click()
+    })
+
+    function unsubscribe(name) {
+        subscribedChannels.delete(name)
+        // Remove listeners for this channel
+        for (const key of listeners.keys()) {
+            if (key.startsWith(name + '::')) listeners.delete(key)
+        }
+        addLog('system', 'UNSUB', `Unsubscribed from channel: ${name}`)
+        renderChannelList()
+        syncSelects()
+        updateSendListenButtons()
+    }
+
+    function renderChannelList() {
+        if (subscribedChannels.size === 0) {
+            channelList.innerHTML = '<span style="font-size:.75rem;color:var(--text-dim)">No active channels</span>'
+            return
+        }
+        channelList.innerHTML = [...subscribedChannels].map(ch => `
+            <div class="chip active">
+                ${escHtml(ch)}
+                <button class="chip-remove" onclick="unsubscribe('${escHtml(ch)}')" title="Unsubscribe">×</button>
+            </div>`).join('')
+    }
+
+    function syncSelects() {
+        const channels = [...subscribedChannels]
+        ;[sendChannelSel, listenChannelSel].forEach(sel => {
+            const prev = sel.value
+            sel.innerHTML = '<option value="">— select channel —</option>' +
+                channels.map(ch => `<option value="${escHtml(ch)}"${ch===prev?' selected':''}>${escHtml(ch)}</option>`).join('')
+        })
+    }
+
+    function updateSendListenButtons() {
+        const hasCh = subscribedChannels.size > 0 && socket && socket.connected
+        btnSend.disabled   = !hasCh
+        btnListen.disabled = !hasCh
+    }
+
+    // ── Send ───────────────────────────────────────────────────────────────
+    btnSend.onclick = () => {
+        const channel = sendChannelSel.value
+        const event   = $('send-event').value.trim()
+        const raw     = $('send-data').value.trim()
+
+        if (!channel) { alert('Select a channel'); return }
+        if (!event)   { alert('Enter event name'); return }
+
+        let message
+        try { message = JSON.parse(raw) } catch {
+            alert('Invalid JSON in "Data" field'); return
+        }
+
+        socket.emit('message', { appKey, channel, event, message })
+        addLog('outgoing', 'SEND',
+            JSON.stringify(message, null, 2),
+            `channel: ${channel}  •  event: ${event}`)
+    }
+
+    // ── Listen ─────────────────────────────────────────────────────────────
+    btnListen.onclick = () => {
+        const channel = listenChannelSel.value
+        const event   = $('listen-event').value.trim()
+
+        if (!channel) { alert('Select a channel'); return }
+        if (!event)   { alert('Enter event name'); return }
+
+        const key = `${channel}::${event}`
+        if (listeners.has(key)) {
+            listeners.delete(key)
+            btnListen.textContent = 'Start listening'
+            addLog('system', 'UNLISTEN', `Stopped listening: ${event} @ ${channel}`)
+        } else {
+            listeners.set(key, true)
+            btnListen.textContent = 'Stop'
+            addLog('system', 'LISTEN', `Listening for event: ${event} @ ${channel}`)
+        }
+    }
+
+    // Sync listen button state on select change
+    listenChannelSel.addEventListener('change', syncListenBtn)
+    $('listen-event').addEventListener('input', syncListenBtn)
+    function syncListenBtn() {
+        const key = `${listenChannelSel.value}::${$('listen-event').value.trim()}`
+        btnListen.textContent = listeners.has(key) ? 'Stop' : 'Start listening'
+    }
+</script>
+</body>
+</html>

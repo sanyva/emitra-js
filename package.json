@@ -1,0 +1,32 @@
+{
+  "name": "eventflow-client",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "websocket",
+    "realtime",
+    "eventflow",
+    "socket",
+    "pubsub",
+    "event-stream",
+    "socket.io",
+    "realtime-client",
+    "websocket-client"
+  ],
+  "author": "sanyva@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}
