@@ -52,7 +52,7 @@ channel.trigger('my-event', { message: 'hello world' })
 
 ```html
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-<script src="https://cdn.evnt-flow.com/emitra.min.js"></script>
+<script src="https://cdn.evnt-flow.com/emitra/v1/emitra.min.js"></script>
 
 <script>
 const ef = new Emitra('YOUR_APP_KEY')
