@@ -6,6 +6,7 @@
     <title>Emitra — Test Client</title>
 
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="https://cdn.evnt-flow.com/emitra/v1/emitra.min.js"></script>
     <style>
         *, *::before, *::after {
             box-sizing: border-box;
@@ -573,9 +574,8 @@
 
 <script>
     // ── State ──────────────────────────────────────────────────────────────
-    let socket = null
-    let appKey = ''
-    let subscribedChannels = new Set()      // channel name → true
+    let emitra = null
+    let channels = new Map()                // channelName → EmitraChannel
     let listeners = new Map()               // "channel::event" → true
 
     let allLogEntries = []
@@ -662,7 +662,7 @@
 
     // ── Connection ─────────────────────────────────────────────────────────
     btnConnect.onclick = () => {
-        appKey = $('app-key').value.trim()
+        const appKey = $('app-key').value.trim()
         const host = $('server-url').value.trim() || 'wss://wss.evnt-flow.com'
 
         if (!appKey) {
@@ -673,70 +673,39 @@
         setStatus('connecting')
         addLog('system', 'SYSTEM', `Connecting to ${host}…`)
 
-        socket = io(host, {
-            path: '/socket.io',
-            query: {appKey},
-            reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000
-        })
+        // ✅ Using Emitra library instead of raw socket.io
+        emitra = new Emitra(appKey, { host: host, debug: false })
 
-        socket.on('connect', () => {
-            setStatus('connected')
-            addLog('system', 'CONNECT', `Connected ✓  socket.id: ${socket.id}`)
-            addLog('system', 'TIP', '💡 To test receiving messages, open this page in a second tab with the same App Key and channel.')
-            btnConnect.disabled = true
-            btnDisconnect.disabled = false
-            btnSubscribe.disabled = false
-
-            // resubscribe
-            subscribedChannels.forEach(ch => {
-                socket.emit('subscribe', {appKey, channel: ch})
-            })
-        })
-
-        socket.on('disconnect', reason => {
-            setStatus('disconnected')
-            addLog('error', 'DISCONNECT', `Disconnected: ${reason}`)
-            btnConnect.disabled = false
-            btnDisconnect.disabled = true
-            btnSubscribe.disabled = true
-            updateSendListenButtons()
-        })
-
-        socket.on('connect_error', err => {
-            setStatus('disconnected')
-            addLog('error', 'ERROR', `Connection error: ${err.message}`)
-        })
-
-        // Global message dispatcher
-        socket.on('message', data => {
-            if (!data || !data.channel || !data.event) return
-            const key = `${data.channel}::${data.event}`
-            if (listeners.has(key)) {
-                addLog('incoming', 'RECEIVE',
-                    JSON.stringify(data.message, null, 2),
-                    `channel: ${data.channel}  •  event: ${data.event}`)
-            } else {
-                addLog('incoming', 'MESSAGE',
-                    JSON.stringify(data.message, null, 2),
-                    `channel: ${data.channel}  •  event: ${data.event}`)
+        // Monitor connection via internal socket
+        emitra._getSocket = () => emitra.socket || emitra._socket
+        const checkConnection = setInterval(() => {
+            if (emitra.connected()) {
+                clearInterval(checkConnection)
+                setStatus('connected')
+                addLog('system', 'CONNECT', 'Connected ✓ via Emitra')
+                addLog('system', 'TIP', '💡 To test receiving messages, open this page in a second tab with the same App Key and channel.')
+                btnConnect.disabled = true
+                btnDisconnect.disabled = false
+                btnSubscribe.disabled = false
             }
-        })
+        }, 200)
 
-        socket.on('subscription-error', err => {
-            addLog('error', 'SUB ERR', JSON.stringify(err))
-        })
-        socket.on('message-error', err => {
-            addLog('error', 'MSG ERR', JSON.stringify(err))
+        // Listen for errors
+        emitra.onError((err) => {
+            addLog('error', 'ERROR', JSON.stringify(err))
         })
     }
 
     btnDisconnect.onclick = () => {
-        if (socket) socket.disconnect()
-        subscribedChannels.clear()
+        if (emitra) emitra.disconnect()
+        emitra = null
+        channels.clear()
         listeners.clear()
+        setStatus('disconnected')
+        addLog('system', 'DISCONNECT', 'Disconnected')
+        btnConnect.disabled = false
+        btnDisconnect.disabled = true
+        btnSubscribe.disabled = true
         renderChannelList()
         syncSelects()
         updateSendListenButtons()
@@ -756,13 +725,14 @@
             alert('Enter channel name');
             return
         }
-        if (subscribedChannels.has(name)) {
+        if (channels.has(name)) {
             alert('Already subscribed');
             return
         }
 
-        subscribedChannels.add(name)
-        socket.emit('subscribe', {appKey, channel: name})
+        // ✅ Using emitra.subscribe()
+        const channel = emitra.subscribe(name)
+        channels.set(name, channel)
         addLog('system', 'SUBSCRIBE', `Subscribed to channel: ${name}`)
         renderChannelList()
         syncSelects()
@@ -775,7 +745,9 @@
     })
 
     function unsubscribe(name) {
-        subscribedChannels.delete(name)
+        // ✅ Using emitra.unsubscribe()
+        if (emitra) emitra.unsubscribe(name)
+        channels.delete(name)
         // Remove listeners for this channel
         for (const key of listeners.keys()) {
             if (key.startsWith(name + '::')) listeners.delete(key)
@@ -787,11 +759,11 @@
     }
 
     function renderChannelList() {
-        if (subscribedChannels.size === 0) {
+        if (channels.size === 0) {
             channelList.innerHTML = '<span style="font-size:.75rem;color:var(--text-dim)">No active channels</span>'
             return
         }
-        channelList.innerHTML = [...subscribedChannels].map(ch => `
+        channelList.innerHTML = [...channels.keys()].map(ch => `
             <div class="chip active">
                 ${escHtml(ch)}
                 <button class="chip-remove" onclick="unsubscribe('${escHtml(ch)}')" title="Unsubscribe">×</button>
@@ -799,27 +771,27 @@
     }
 
     function syncSelects() {
-        const channels = [...subscribedChannels]
+        const chNames = [...channels.keys()]
         ;[sendChannelSel, listenChannelSel].forEach(sel => {
             const prev = sel.value
             sel.innerHTML = '<option value="">— select channel —</option>' +
-                channels.map(ch => `<option value="${escHtml(ch)}"${ch === prev ? ' selected' : ''}>${escHtml(ch)}</option>`).join('')
+                chNames.map(ch => `<option value="${escHtml(ch)}"${ch === prev ? ' selected' : ''}>${escHtml(ch)}</option>`).join('')
         })
     }
 
     function updateSendListenButtons() {
-        const hasCh = subscribedChannels.size > 0 && socket && socket.connected
+        const hasCh = channels.size > 0 && emitra && emitra.connected()
         btnSend.disabled = !hasCh
         btnListen.disabled = !hasCh
     }
 
     // ── Send ───────────────────────────────────────────────────────────────
     btnSend.onclick = () => {
-        const channel = sendChannelSel.value
+        const channelName = sendChannelSel.value
         const event = $('send-event').value.trim()
         const raw = $('send-data').value.trim()
 
-        if (!channel) {
+        if (!channelName) {
             alert('Select a channel');
             return
         }
@@ -836,19 +808,21 @@
             return
         }
 
-        socket.emit('message', {appKey, channel, event, message})
+        // ✅ Using channel.trigger()
+        const channel = channels.get(channelName)
+        channel.trigger(event, message)
         addLog('outgoing', 'SEND',
             JSON.stringify(message, null, 2),
-            `channel: ${channel}  •  event: ${event}`)
+            `channel: ${channelName}  •  event: ${event}`)
         addLog('system', 'NOTE', 'You will not receive your own message — open a second tab to see it delivered.')
     }
 
     // ── Listen ─────────────────────────────────────────────────────────────
     btnListen.onclick = () => {
-        const channel = listenChannelSel.value
+        const channelName = listenChannelSel.value
         const event = $('listen-event').value.trim()
 
-        if (!channel) {
+        if (!channelName) {
             alert('Select a channel');
             return
         }
@@ -857,15 +831,25 @@
             return
         }
 
-        const key = `${channel}::${event}`
+        const key = `${channelName}::${event}`
+        const channel = channels.get(channelName)
+
         if (listeners.has(key)) {
+            // ✅ Using channel.off()
+            channel.off(event)
             listeners.delete(key)
             btnListen.textContent = 'Start listening'
-            addLog('system', 'UNLISTEN', `Stopped listening: ${event} @ ${channel}`)
+            addLog('system', 'UNLISTEN', `Stopped listening: ${event} @ ${channelName}`)
         } else {
+            // ✅ Using channel.on()
+            channel.on(event, (data) => {
+                addLog('incoming', 'RECEIVE',
+                    JSON.stringify(data, null, 2),
+                    `channel: ${channelName}  •  event: ${event}`)
+            })
             listeners.set(key, true)
             btnListen.textContent = 'Stop'
-            addLog('system', 'LISTEN', `Listening for event: ${event} @ ${channel}`)
+            addLog('system', 'LISTEN', `Listening for event: ${event} @ ${channelName}`)
         }
     }
 
