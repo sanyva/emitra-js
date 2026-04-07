@@ -1,6 +1,6 @@
 {
-  "name": "eventflow-client",
-  "version": "1.0.4",
+  "name": "emitra-js",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -14,13 +14,14 @@
   "keywords": [
     "websocket",
     "realtime",
-    "eventflow",
+    "emitra",
     "socket",
     "pubsub",
     "event-stream",
     "socket.io",
     "realtime-client",
-    "websocket-client"
+    "websocket-client",
+    "free websocket"
   ],
   "author": "sanyva@gmail.com",
   "license": "MIT",

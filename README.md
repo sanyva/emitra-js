@@ -1,18 +1,18 @@
-# ⚡ EventFlow Client
+# ⚡ Emitra
 
 **Free, lightweight real-time WebSocket client for building event-driven applications.**
 
 > **100% Free Forever** — no credit card, no trial limits. Get your free App Key at **[evnt-flow.com](https://evnt-flow.com)** and start streaming events in minutes.
 
-[![npm](https://img.shields.io/npm/v/eventflow-client)](https://www.npmjs.com/package/eventflow-client)
-[![license](https://img.shields.io/npm/l/eventflow-client)](LICENSE)
+[![npm](https://img.shields.io/npm/v/emitra-js)](https://www.npmjs.com/package/emitra-js)
+[![license](https://img.shields.io/npm/l/emitra-js)](LICENSE)
 
 ---
 
 ## 🚀 Installation
 
 ```bash
-npm install eventflow-client
+npm install emitra-js
 ```
 
 ---
@@ -29,9 +29,9 @@ npm install eventflow-client
 ## ⚡ Quick Start
 
 ```js
-import EventFlow from 'eventflow-client'
+import Emitra from 'emitra-js'
 
-const ef = new EventFlow('YOUR_APP_KEY')
+const ef = new Emitra('YOUR_APP_KEY')
 const channel = ef.subscribe('my-channel')
 
 // Listen for incoming messages from OTHER clients
@@ -52,10 +52,10 @@ channel.trigger('my-event', { message: 'hello world' })
 
 ```html
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-<script src="https://cdn.evnt-flow.com/eventflow.min.js"></script>
+<script src="https://cdn.evnt-flow.com/emitra.min.js"></script>
 
 <script>
-const ef = new EventFlow('YOUR_APP_KEY')
+const ef = new Emitra('YOUR_APP_KEY')
 const channel = ef.subscribe('my-channel')
 
 channel.on('my-event', (data) => {
@@ -84,7 +84,7 @@ channel.trigger('my-event', { message: 'hello world' })
 
 ## 📦 API Reference
 
-### `new EventFlow(appKey, options?)`
+### `new Emitra(appKey, options?)`
 
 Create a new client instance.
 
@@ -95,12 +95,12 @@ Create a new client instance.
 | `options.debug` | `boolean` | Enable debug console logs (default: `false`) |
 
 ```js
-const ef = new EventFlow('YOUR_APP_KEY', { debug: true })
+const ef = new Emitra('YOUR_APP_KEY', { debug: true })
 ```
 
 ---
 
-### `ef.subscribe(channelName)` → `EventFlowChannel`
+### `ef.subscribe(channelName)` → `EmitraChannel`
 
 Subscribe to a channel. Returns a channel object.
 
@@ -162,7 +162,7 @@ Listen for server-side errors (subscription errors, rate limit blocks, etc.)
 
 ```js
 ef.onError((err) => {
-  console.error('EventFlow error:', err)
+  console.error('Emitra error:', err)
 })
 ```
 
@@ -194,7 +194,7 @@ See the [`/example`](./example) folder for a full interactive test client with U
 
 ## 🆓 Pricing
 
-EventFlow is **free forever** with generous limits:
+Emitra is **free forever** with generous limits:
 
 - ✅ 50 messages/sec
 - ✅ 500 peak connections
@@ -207,4 +207,4 @@ Need more? Check out paid plans at [evnt-flow.com](https://evnt-flow.com).
 
 ## 📄 License
 
-MIT © [EventFlow](https://evnt-flow.com)
+MIT © [Emitra](https://evnt-flow.com)

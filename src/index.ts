@@ -1,10 +1,10 @@
-// EventFlow Client Library v1.0.0
+// Emitra Client Library v2.0.0
 // Real-time event streaming via WebSocket
 // https://evnt-flow.com
 
 import { io, Socket } from 'socket.io-client'
 
-interface EventFlowOptions {
+interface EmitraOptions {
     host?: string
     debug?: boolean
 }
@@ -15,15 +15,15 @@ interface EventPayload {
     message: any
 }
 
-class EventFlow {
+class Emitra {
     private socket: Socket
-    private channels: Map<string, EventFlowChannel> = new Map()
+    private channels: Map<string, EmitraChannel> = new Map()
     private appKey: string
-    private options: EventFlowOptions
+    private options: EmitraOptions
     private isConnected: boolean = false
 
-    constructor(appKey: string, options: EventFlowOptions = {}) {
-        if (!appKey) throw new Error('EventFlow: appKey is required')
+    constructor(appKey: string, options: EmitraOptions = {}) {
+        if (!appKey) throw new Error('Emitra: appKey is required')
 
         this.appKey = appKey
         this.options = options
@@ -43,17 +43,17 @@ class EventFlow {
     private _setupConnectionListeners() {
         this.socket.on('connect', () => {
             this.isConnected = true
-            if (this.options.debug) console.log('⚡ EventFlow connected')
+            if (this.options.debug) console.log('⚡ Emitra connected')
             this._resubscribeAllChannels()
         })
 
         this.socket.on('disconnect', (reason) => {
             this.isConnected = false
-            if (this.options.debug) console.log('🔌 EventFlow disconnected:', reason)
+            if (this.options.debug) console.log('🔌 Emitra disconnected:', reason)
         })
 
         this.socket.on('connect_error', (error) => {
-            if (this.options.debug) console.error('❌ EventFlow connection error:', error.message)
+            if (this.options.debug) console.error('❌ Emitra connection error:', error.message)
         })
     }
 
@@ -79,11 +79,11 @@ class EventFlow {
         })
     }
 
-    subscribe(channelName: string): EventFlowChannel {
-        if (!channelName) throw new Error('EventFlow: channelName is required')
+    subscribe(channelName: string): EmitraChannel {
+        if (!channelName) throw new Error('Emitra: channelName is required')
 
         if (!this.channels.has(channelName)) {
-            const channel = new EventFlowChannel(
+            const channel = new EmitraChannel(
                 this.socket,
                 this.appKey,
                 channelName,
@@ -108,7 +108,7 @@ class EventFlow {
         this.channels.clear()
         this.socket.disconnect()
         this.isConnected = false
-        if (this.options.debug) console.log('👋 EventFlow disconnected')
+        if (this.options.debug) console.log('👋 Emitra disconnected')
     }
 
     onError(callback: (data: any) => void): void {
@@ -121,7 +121,7 @@ class EventFlow {
     }
 }
 
-class EventFlowChannel {
+class EmitraChannel {
     private socket: Socket
     private appKey: string
     readonly channelName: string
@@ -178,4 +178,4 @@ class EventFlowChannel {
     }
 }
 
-export default EventFlow
+export default Emitra
