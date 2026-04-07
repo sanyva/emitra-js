@@ -9,7 +9,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && npm run build:cdn",
+    "build:cdn": "esbuild src/index.ts --bundle --minify --format=iife --global-name=Emitra --outfile=dist/emitra.min.js --footer:js=\"if(typeof window!=='undefined'){window.Emitra=Emitra.default||Emitra}\""
   },
   "keywords": [
     "websocket",
@@ -29,6 +30,7 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "esbuild": "^0.28.0",
     "typescript": "^6.0.2"
   }
 }
