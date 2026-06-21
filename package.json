@@ -1,15 +1,22 @@
 {
   "name": "emitra-js",
   "version": "2.0.2",
-  "main": "dist/index.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && npm run build:cdn",
+    "build": "tsc && tsc -p tsconfig.cjs.json && npm run build:cdn",
     "build:cdn": "esbuild src/index.ts --bundle --minify --format=iife --global-name=Emitra --outfile=dist/emitra.min.js --footer:js=\"if(typeof window!=='undefined'){window.Emitra=Emitra.default||Emitra}\""
   },
   "keywords": [
