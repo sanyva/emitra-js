@@ -16,7 +16,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.cjs.json && npm run build:cdn",
+    "build": "tsc && tsc -p tsconfig.cjs.json && npm run build:cjs-pkg && npm run build:cdn",
+    "build:cjs-pkg": "node -e \"const fs=require('fs');fs.writeFileSync('dist/cjs/package.json',JSON.stringify({type:'commonjs'},null,2));fs.appendFileSync('dist/cjs/index.js','\\nmodule.exports=exports.default||exports;')\"",
     "build:cdn": "esbuild src/index.ts --bundle --minify --format=iife --global-name=Emitra --outfile=dist/emitra.min.js --footer:js=\"if(typeof window!=='undefined'){window.Emitra=Emitra.default||Emitra}\""
   },
   "keywords": [
